@@ -1,0 +1,51 @@
+#!/usr/bin/bash
+#########################################################
+#     Crafted by Mokoboro Leonard Manong 2022-04-05    #
+#                                                      #
+########################################################
+
+campaign=('1msp1' '1mmw1' '3debt3' '4debt4' '5debt5' '6debt6' '2cfun2' '3cfun3' '4clegal4' 'Nettrack' '2Nettrack2' 'Moondebt' 'TacAllLife')
+strategy=('optin' 'optout' 'human' 'machine')
+
+reporttype="daily"
+dow=$(date +'%Y-%m-%d')
+weekly=$(date +'%Y-%m-%d' -d "5 days ago")
+
+
+#####################################Check if the day of the week is Friday, then change date to start 5 days back
+if [[ $(date +%u) -eq 5 ]];
+    then
+        dow=$(date +'%Y-%m-%d' -d "5 days ago")
+        reporttype="weekly"
+    else
+        dow=$(date +'%Y-%m-%d')
+        reporttype="daily"
+fi
+
+#echo $dow
+
+for i in ${!campaign[@]}; 
+ do 
+    #for t in ${!strategy[@]}; 
+    # do
+         echo '' | awk '{print "select calldate, SUBSTR(channel,7,11) from cdr where calldate >= '\''${dow}'\'' and accountcode = '\'''${campaign[$i]}''\'' and userfield = '\'''${strategy[2]}''\'' into outfile '\'''/tmp/${strategy[2]}-${reporttype}-${dow}-${campaign[$i]}-${strategy[2]}-answered.csv''\'' fields terminated by '\''',''\'' lines terminated by '\''\\''n'''\'';"}' >> /tmp/reports-campaigns/reports-${strategy[2]}-campaigns-${dow}.list
+         echo '' | awk '{print "select calldate, SUBSTR(channel,7,11) from cdr where calldate >= '\''${dow}'\'' and accountcode = '\'''${campaign[$i]}''\'' and userfield = '\'''${strategy[3]}''\'' into outfile '\'''/tmp/${strategy[3]}-${reporttype}-${dow}-${campaign[$i]}-${strategy[3]}-answered.csv''\'' fields terminated by '\''',''\'' lines terminated by '\''\\''n'''\'';"}' >> /tmp/reports-campaigns/reports-${strategy[3]}-campaigns-${dow}.list
+         echo '' | awk '{print "select calldate, SUBSTR(channel,7,11) from cdr where calldate >= '\''${dow}'\''and accountcode = '\'''${campaign[$i]}''\'' and dst = '\''9'\'' and userfield = '\''<>'\'' and disposition = '\''ANSWERED'\'' into outfile '\'''/tmp/optOut-${reporttype}-${dow}-${campaign[$i]}-${strategy[1]}-answered.csv''\'' fields terminated by '\''',''\'' lines terminated by '\''\\''n'''\'';"}' >> /tmp/reports-campaigns/reports-${strategy[1]}-campaigns-${dow}.list
+         echo '' | awk '{print "select calldate, SUBSTR(channel,7,11) from cdr where calldate >= '\''${dow}'\'' and accountcode = '\'''${campaign[$i]}''\'' and dst = '\''1'\'' and userfield = '\''<>'\'' and disposition = '\''ANSWERED'\'' into outfile '\'''/tmp/optIN-${reporttype}-${dow}-${campaign[$i]}-${strategy[0]}-answered.csv''\'' fields terminated by '\''',''\'' lines terminated by '\''\\''n'''\'';"}' >> /tmp/reports-campaigns/reports-${strategy[0]}-campaigns-${dow}.list
+   # done
+done
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++pipe output of reports-*.list to mysql asterisk to run the actual query+++++++++++++++++++++++++++++++++++++++
+
+/usr/bin/cat /tmp/reports-campaigns/reports-*.list | mysql asterisk
+
+###########################+++++++++++++++++++++++create a zip file of all created csv file ++++++++++++++++++#############################################
+
+/usr/bin/zip -m /tmp/reports-campaigns/reports-$dow-all-campaigns.zip /tmp/*-$reporttype-$dow-*.csv
+#/usr/bin/zip -m /tmp/reports-campaigns/reports-$dow-all-campaigns.zip /tmp/*--$dow-*.csv
+
+###########################+++++++++++++delete the *.list file which contained the sql queuery+++++++++++++++#################################################
+
+/usr/bin/rm /tmp/reports-campaigns/*.list
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++END OF CODING+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
